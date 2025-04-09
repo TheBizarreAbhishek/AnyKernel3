@@ -2,64 +2,38 @@
 ## osm0sis @ xda-developers
 
 ### AnyKernel setup
-# global properties
 properties() { '
-kernel.string=BizarreKernel by Abhishek babu for Samsung Galaxy F23 and M23
+kernel.string=BizarreKernel by Abhishek Babu for Galaxy M35
 do.devicecheck=1
 do.modules=0
 do.systemless=1
 do.cleanup=1
 do.cleanuponabort=0
-device.name1=m23xq
-device.name2=m23xq
-device.name3=m23xq
-device.name4=m23xq
-device.name5=m23xq
-supported.versions=
-supported.patchlevels=
-supported.vendorpatchlevels=
-'; } # end properties
-
+device.name1=m35x
+'; }
 
 ### AnyKernel install
-## boot files attributes
-boot_attributes() {
-set_perm_recursive 0 0 755 644 $RAMDISK/*;
-set_perm_recursive 0 0 750 750 $RAMDISK/init* $RAMDISK/sbin;
-} # end attributes
+init_boot_attributes() {
+  set_perm_recursive 0 0 755 644 $RAMDISK/*
+  set_perm_recursive 0 0 750 750 $RAMDISK/init* $RAMDISK/sbin
+}
 
-# boot shell variables
-BLOCK=/dev/block/bootdevice/by-name/boot;
-is_slot_device=0;
-ramdisk_compression=auto;
-patch_vbmeta_flag=auto;
-IS_SLOT_DEVICE=0;
-RAMDISK_COMPRESSION=auto;
-PATCH_VBMETA_FLAG=auto;
+# init_boot shell variables
+BLOCK=/dev/block/sda16
+IS_SLOT_DEVICE=0
+RAMDISK_COMPRESSION=auto
+PATCH_VBMETA_FLAG=auto
 
-# import functions/variables and setup patching - see for reference (DO NOT REMOVE)
-. tools/ak3-core.sh;
+. tools/ak3-core.sh
 
-# boot install
-dump_boot; # use split_boot to skip ramdisk unpack, e.g. for devices with init_boot ramdisk
+# install logic
+dump_boot # unpack init_boot.img including ramdisk
 
-# init.rc
-backup_file init.rc;
-replace_string init.rc "cpuctl cpu,timer_slack" "mount cgroup none /dev/cpuctl cpu" "mount cgroup none /dev/cpuctl cpu,timer_slack";
+# optional ramdisk patching (e.g. magisk, susfs)
+# backup_file init.rc
+# replace_string init.rc "original" "replacement" "context"
 
-# init.tuna.rc
-backup_file init.tuna.rc;
-insert_line init.tuna.rc "nodiratime barrier=0" after "mount_all /fstab.tuna" "\tmount ext4 /dev/block/platform/omap/omap_hsmmc.0/by-name/userdata /data remount nosuid nodev noatime nodiratime barrier=0";
-append_file init.tuna.rc "bootscript" init.tuna;
-
-# fstab.tuna
-backup_file fstab.tuna;
-patch_fstab fstab.tuna /system ext4 options "noatime,barrier=1" "noatime,nodiratime,barrier=0";
-patch_fstab fstab.tuna /cache ext4 options "barrier=1" "barrier=0,nomblk_io_submit";
-patch_fstab fstab.tuna /data ext4 options "data=ordered" "nomblk_io_submit,data=writeback";
-append_file fstab.tuna "usbdisk" fstab;
-
-write_boot; # use flash_boot to skip ramdisk repack, e.g. for devices with init_boot ramdisk
+write_boot # repack and flash init_boot.img
 ## end boot install
 
 

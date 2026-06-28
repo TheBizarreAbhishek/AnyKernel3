@@ -1,23 +1,25 @@
 ### AnyKernel3 Ramdisk Mod Script
-## Bizarre Kernel for Galaxy M35 (m35x) & Galaxy A35 (a35x)
-## Exynos 1380 (s5e8835) | One UI 7 / Android 16
+## osm0sis @ xda-developers
 
 ### AnyKernel setup
+# global properties
 properties() { '
-kernel.string=Bizarre Kernel by TheBizarreAbhishek
+kernel.string=ExampleKernel by osm0sis @ xda-developers
 do.devicecheck=1
 do.modules=0
 do.systemless=1
 do.cleanup=1
 do.cleanuponabort=0
-device.name1=m35x
-device.name2=a35x
-device.name3=SM-M356B
-device.name4=SM-A356B
+device.name1=maguro
+device.name2=toro
+device.name3=toroplus
+device.name4=tuna
 device.name5=
 supported.versions=
 supported.patchlevels=
+supported.vendorpatchlevels=
 '; } # end properties
+
 
 ### AnyKernel install
 ## boot files attributes
@@ -27,60 +29,93 @@ set_perm_recursive 0 0 750 750 $RAMDISK/init* $RAMDISK/sbin;
 } # end attributes
 
 # boot shell variables
-BLOCK=boot;
-IS_SLOT_DEVICE=1;
+BLOCK=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot;
+IS_SLOT_DEVICE=0;
 RAMDISK_COMPRESSION=auto;
 PATCH_VBMETA_FLAG=auto;
 
-# import functions/variables and setup patching (DO NOT REMOVE)
+# import functions/variables and setup patching - see for reference (DO NOT REMOVE)
 . tools/ak3-core.sh;
 
 # boot install
-split_boot;
+dump_boot; # use split_boot to skip ramdisk unpack, e.g. for devices with init_boot ramdisk
 
-# Flash kernel Image
-flash_boot;
+# init.rc
+backup_file init.rc;
+replace_string init.rc "cpuctl cpu,timer_slack" "mount cgroup none /dev/cpuctl cpu" "mount cgroup none /dev/cpuctl cpu,timer_slack";
 
-## Detect device and flash correct DTBO
-ui_print " ";
-ui_print "  Bizarre Kernel | Exynos 1380 (s5e8835)";
-ui_print " ";
+# init.tuna.rc
+backup_file init.tuna.rc;
+insert_line init.tuna.rc "nodiratime barrier=0" after "mount_all /fstab.tuna" "\tmount ext4 /dev/block/platform/omap/omap_hsmmc.0/by-name/userdata /data remount nosuid nodev noatime nodiratime barrier=0";
+append_file init.tuna.rc "bootscript" init.tuna;
 
-device_codename=$(getprop ro.product.device);
-device_model=$(getprop ro.product.model);
-ui_print "- Device: $device_model ($device_codename)";
+# fstab.tuna
+backup_file fstab.tuna;
+patch_fstab fstab.tuna /system ext4 options "noatime,barrier=1" "noatime,nodiratime,barrier=0";
+patch_fstab fstab.tuna /cache ext4 options "barrier=1" "barrier=0,nomblk_io_submit";
+patch_fstab fstab.tuna /data ext4 options "data=ordered" "nomblk_io_submit,data=writeback";
+append_file fstab.tuna "usbdisk" fstab;
 
-# Flash DTBO partition based on device
-BLOCK=dtbo;
-reset_ak;
-
-case "$device_codename" in
-  m35x)
-    ui_print "- Flashing M35 DTBO...";
-    flash_boot dtbo-m35x.img;
-    ;;
-  a35x)
-    ui_print "- Flashing A35 DTBO...";
-    flash_boot dtbo-a35x.img;
-    ;;
-  *)
-    case "$device_model" in
-      *M356B*|*M35*)
-        ui_print "- Flashing M35 DTBO (model match)...";
-        flash_boot dtbo-m35x.img;
-        ;;
-      *A356B*|*A35*)
-        ui_print "- Flashing A35 DTBO (model match)...";
-        flash_boot dtbo-a35x.img;
-        ;;
-      *)
-        ui_print "! Unsupported device: $device_model ($device_codename)";
-        ui_print "! Skipping DTBO flash.";
-        ;;
-    esac
-    ;;
-esac
-
-ui_print " ";
-ui_print "- Done! Reboot to enjoy Bizarre Kernel.";
+write_boot; # use flash_boot to skip ramdisk repack, e.g. for devices with init_boot ramdisk
 ## end boot install
+
+
+## init_boot files attributes
+#init_boot_attributes() {
+#set_perm_recursive 0 0 755 644 $RAMDISK/*;
+#set_perm_recursive 0 0 750 750 $RAMDISK/init* $RAMDISK/sbin;
+#} # end attributes
+
+# init_boot shell variables
+#BLOCK=init_boot;
+#IS_SLOT_DEVICE=1;
+#RAMDISK_COMPRESSION=auto;
+#PATCH_VBMETA_FLAG=auto;
+
+# reset for init_boot patching
+#reset_ak;
+
+# init_boot install
+#dump_boot; # unpack ramdisk since it is the new first stage init ramdisk where overlay.d must go
+
+#write_boot;
+## end init_boot install
+
+
+## vendor_kernel_boot shell variables
+#BLOCK=vendor_kernel_boot;
+#IS_SLOT_DEVICE=1;
+#RAMDISK_COMPRESSION=auto;
+#PATCH_VBMETA_FLAG=auto;
+
+# reset for vendor_kernel_boot patching
+#reset_ak;
+
+# vendor_kernel_boot install
+#split_boot; # skip unpack/repack ramdisk, e.g. for dtb on devices with hdr v4 and vendor_kernel_boot
+
+#flash_boot;
+## end vendor_kernel_boot install
+
+
+## vendor_boot files attributes
+#vendor_boot_attributes() {
+#set_perm_recursive 0 0 755 644 $RAMDISK/*;
+#set_perm_recursive 0 0 750 750 $RAMDISK/init* $RAMDISK/sbin;
+#} # end attributes
+
+# vendor_boot shell variables
+#BLOCK=vendor_boot;
+#IS_SLOT_DEVICE=1;
+#RAMDISK_COMPRESSION=auto;
+#PATCH_VBMETA_FLAG=auto;
+
+# reset for vendor_boot patching
+#reset_ak;
+
+# vendor_boot install
+#dump_boot; # use split_boot to skip ramdisk unpack, e.g. for dtb on devices with hdr v4 but no vendor_kernel_boot
+
+#write_boot; # use flash_boot to skip ramdisk repack, e.g. for dtb on devices with hdr v4 but no vendor_kernel_boot
+## end vendor_boot install
+

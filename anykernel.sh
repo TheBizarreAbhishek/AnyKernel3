@@ -54,11 +54,17 @@ case "$device_codename" in
     ui_print "- Flashing Galaxy M35 DTBO...";
     mv dtbo-m35x.img dtbo.img
     flash_generic dtbo;
+    ui_print "- Flashing Exynos 1380 DTB...";
+    mv dtb dtb.img
+    flash_generic dtb;
     ;;
   a35x)
     ui_print "- Flashing Galaxy A35 DTBO...";
     mv dtbo-a35x.img dtbo.img
     flash_generic dtbo;
+    ui_print "- Flashing Exynos 1380 DTB...";
+    mv dtb dtb.img
+    flash_generic dtb;
     ;;
   *)
     case "$device_model" in
@@ -66,15 +72,21 @@ case "$device_codename" in
         ui_print "- Flashing Galaxy M35 DTBO (model match)...";
         mv dtbo-m35x.img dtbo.img
         flash_generic dtbo;
+        ui_print "- Flashing Exynos 1380 DTB...";
+        mv dtb dtb.img
+        flash_generic dtb;
         ;;
       *A356B*|*A35*)
         ui_print "- Flashing Galaxy A35 DTBO (model match)...";
         mv dtbo-a35x.img dtbo.img
         flash_generic dtbo;
+        ui_print "- Flashing Exynos 1380 DTB...";
+        mv dtb dtb.img
+        flash_generic dtb;
         ;;
       *)
         ui_print "! Unknown device: $device_model ($device_codename)";
-        ui_print "! Skipping DTBO flash.";
+        ui_print "! Skipping DTBO/DTB flash.";
         ;;
     esac
     ;;

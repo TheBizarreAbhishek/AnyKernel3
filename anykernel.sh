@@ -52,21 +52,25 @@ ui_print " ";
 case "$device_codename" in
   m35x)
     ui_print "- Flashing Galaxy M35 DTBO...";
-    flash_generic dtbo-m35x.img;
+    mv dtbo-m35x.img dtbo.img
+    flash_generic dtbo;
     ;;
   a35x)
     ui_print "- Flashing Galaxy A35 DTBO...";
-    flash_generic dtbo-a35x.img;
+    mv dtbo-a35x.img dtbo.img
+    flash_generic dtbo;
     ;;
   *)
     case "$device_model" in
       *M356B*|*M35*)
         ui_print "- Flashing Galaxy M35 DTBO (model match)...";
-        flash_generic dtbo-m35x.img;
+        mv dtbo-m35x.img dtbo.img
+        flash_generic dtbo;
         ;;
       *A356B*|*A35*)
         ui_print "- Flashing Galaxy A35 DTBO (model match)...";
-        flash_generic dtbo-a35x.img;
+        mv dtbo-a35x.img dtbo.img
+        flash_generic dtbo;
         ;;
       *)
         ui_print "! Unknown device: $device_model ($device_codename)";
